@@ -1,4 +1,4 @@
 
 
 run:
-	go run cmd/server/main.go
+	cd backend/cmd/server && go run main.go
