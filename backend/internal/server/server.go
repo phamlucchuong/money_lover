@@ -1,0 +1,41 @@
+package server
+
+import (
+	"chuongpl/quan-ly-chi-tieu/internal/config"
+	"context"
+	"log/slog"
+	"time"
+
+	"github.com/labstack/echo/v5"
+)
+
+type Server struct {
+	echo *echo.Echo
+	cfg  *config.Config
+	log  *slog.Logger
+}
+
+func NewServer(cfg *config.Config, log *slog.Logger) *Server {
+	e := echo.New()
+	s := &Server{
+		echo: e,
+		cfg:  cfg,
+		log:  log,
+	}
+
+	s.SetupRoutes()
+
+	return s
+}
+
+func (s *Server) Start(ctx context.Context) error {
+	s.log.Info("server starting", slog.String("port", s.cfg.Port))
+
+	sc := echo.StartConfig{
+		Address:         ":" + s.cfg.Port,
+		GracefulTimeout: 10 * time.Second,
+		HideBanner:      true,
+	}
+
+	return sc.Start(ctx, s.echo)
+}
