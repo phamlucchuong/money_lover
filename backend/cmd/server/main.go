@@ -3,6 +3,7 @@ package main
 import (
 	"chuongpl/quan-ly-chi-tieu/internal/config"
 	"chuongpl/quan-ly-chi-tieu/internal/logger"
+	"chuongpl/quan-ly-chi-tieu/internal/platform/db"
 	"chuongpl/quan-ly-chi-tieu/internal/server"
 	"context"
 	"log/slog"
@@ -24,7 +25,13 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	srv := server.NewServer(cfg, log)
+	gormDB, err := db.NewGormConfig(cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresName, cfg.PostgresPort)
+	if err != nil {
+		slog.Error("fail to create gorm config", slog.Any("error", err))
+		os.Exit(1)
+	}
+
+	srv := server.NewServer(cfg, log, gormDB)
 
 	log.Info("shutting down server", slog.String("port", cfg.Port))
 	if err := srv.Start(ctx); err != nil {

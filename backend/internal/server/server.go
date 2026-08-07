@@ -7,20 +7,23 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v5"
+	"gorm.io/gorm"
 )
 
 type Server struct {
-	echo *echo.Echo
-	cfg  *config.Config
-	log  *slog.Logger
+	echo   *echo.Echo
+	cfg    *config.Config
+	log    *slog.Logger
+	gormDB *gorm.DB
 }
 
-func NewServer(cfg *config.Config, log *slog.Logger) *Server {
+func NewServer(cfg *config.Config, log *slog.Logger, gormDB *gorm.DB) *Server {
 	e := echo.New()
 	s := &Server{
-		echo: e,
-		cfg:  cfg,
-		log:  log,
+		echo:   e,
+		cfg:    cfg,
+		log:    log,
+		gormDB: gormDB,
 	}
 
 	s.SetupRoutes()
