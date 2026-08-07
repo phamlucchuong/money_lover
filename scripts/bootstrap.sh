@@ -21,7 +21,9 @@ echo ""
 
 # 1. Install JS dependencies
 echo "[1/5] Installing JS dependencies..."
+cd frontend
 pnpm install
+cd ..
 
 # 2. Install Go dependencies
 echo "[2/5] Installing Go dependencies..."
@@ -35,13 +37,6 @@ go install github.com/air-verse/air@latest
 
 # 4. Copy env file
 echo "[4/5] Setting up environment..."
-if [ ! -f .env ]; then
-  cp .env.example .env
-  echo "  Created .env from .env.example"
-else
-  echo "  .env already exists, skipping"
-fi
-
 if [ ! -f backend/.env ]; then
   cp backend/.env.example backend/.env
   echo "  Created backend/.env from backend/.env.example"
@@ -49,21 +44,55 @@ else
   echo "  backend/.env already exists, skipping"
 fi
 
+if [ ! -f frontend/.env ]; then
+  cp frontend/.env.example frontend/.env
+  echo "  Created frontend/.env from frontend/.env.example"
+else
+  echo "  frontend/.env already exists, skipping"
+fi
+
 # 5. Start infrastructure
 echo "[5/5] Starting Docker infrastructure..."
-docker compose -f docker-compose.dev.yml up -d
+echo ""
+echo "⚠️  Please review the env files before starting infrastructure."
+echo "    Default values from .env.example are placeholders and may not"
+echo "    be safe or correct for your setup."
+echo ""
+echo "    Files to review:"
+echo "      - backend/.env"
+echo "      - frontend/.env"
+echo ""
+
+START_INFRA="skip"
+if [ -t 0 ]; then
+  # Interactive terminal — ask the developer
+  read -r -p "Start Docker infrastructure now? [y/N] " reply
+  case "$reply" in
+    [yY]|[yY][eE][sS]) START_INFRA="yes" ;;
+    *)                  START_INFRA="no"  ;;
+  esac
+else
+  # Non-interactive (CI, piped input) — never start infra implicitly
+  echo "  Non-interactive shell detected — skipping Docker startup."
+  echo "  Run 'docker compose -f docker-compose.yaml up -d' manually when ready."
+fi
+
+if [ "$START_INFRA" = "yes" ]; then
+  docker compose -f docker-compose.yaml up -d
+fi
 
 echo ""
 echo "=== Bootstrap Complete ==="
 echo ""
 echo "Next steps:"
-echo "  1. Wait for Docker services to be healthy: docker compose -f docker-compose.dev.yml ps"
-echo "  2. Init Garage bucket (first time only): bash infra/scripts/init-garage-bucket.sh"
-echo "  3. Start backend: cd backend && air"
-echo "  4. Start frontends: pnpm dev"
+echo "  1. Start Docker infrastructure (if not done): docker compose -f docker-compose.yaml up -d"
+echo "  2. Wait for services to be healthy: docker compose -f docker-compose.yaml ps"
+echo "  3. Init PostgreSQL database (first time only): bash infra/scripts/init-postgresql.sh"
+echo "  4. Start backend: cd backend && air"
+echo "  5. Start frontend: cd frontend && pnpm dev"
 echo ""
 echo "Ports:"
-echo "  web:    http://localhost:3000"
-echo "  backend:     http://localhost:8080"
-echo "  PostgreSQL:  localhost:5432 (go-db) / localhost:5433 (odoo-db)"
-echo "  Redis:       localhost:6379"
+echo "  web:        http://localhost:3000"
+echo "  backend:    http://localhost:8080"
+echo "  PostgreSQL: localhost:5432 (postgresql) / localhost:5433 (odoo-db)"
+echo "  Redis:      localhost:6379"

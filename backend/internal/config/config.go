@@ -7,10 +7,13 @@ import (
 )
 
 type Config struct {
-	Port           string   `mapstructure:"PORT"`
-	Environment    string   `mapstructure:"ENVIRONMENT"`
-	DatabaseURL    string   `mapstructure:"DATABASE_URL"`
-	AllowedOrigins []string `mapstructure:"ALLOWED_ORIGINS"`
+	Port             string   `mapstructure:"PORT"`
+	Environment      string   `mapstructure:"ENVIRONMENT"`
+	PostgresUser     string   `mapstructure:"POSTGRES_USER"`
+	PostgresPassword string   `mapstructure:"POSTGRES_PASSWORD"`
+	PostgresName     string   `mapstructure:"POSTGRES_DB"`
+	PostgresPort     string   `mapstructure:"POSTGRESQL_PORT"`
+	AllowedOrigins   []string `mapstructure:"ALLOWED_ORIGINS"`
 }
 
 func LoadConfig() (*Config, error) {
@@ -20,7 +23,10 @@ func LoadConfig() (*Config, error) {
 
 	viper.SetDefault("PORT", "8080")
 	viper.SetDefault("ENVIRONMENT", "local")
-	viper.SetDefault("DATABASE_URL", "postgresql://user:password@localhost/dbname")
+	viper.SetDefault("POSTGRES_USER", "user")
+	viper.SetDefault("POSTGRES_PASSWORD", "password")
+	viper.SetDefault("POSTGRES_DB", "dbname")
+	viper.SetDefault("POSTGRESQL_PORT", "5432")
 	viper.SetDefault("ALLOWED_ORIGINS", "http://localhost:3000")
 
 	_ = viper.ReadInConfig()
