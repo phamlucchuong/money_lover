@@ -1,17 +1,17 @@
-# Quản Lý Chi Tiêu
+# Expense Manager
 
-Dự án cá nhân để quản lý chi tiêu, tích hợp chatbot MCP để thay thế cho các thao tác giao diện thủ công — người dùng có thể h�i hoặc nhờ chatbot thực hiện các thao tác quản lý chi tiêu thay vì click qua nhiều màn hình.
+A personal expense manager that integrates an MCP chatbot to replace manual UI interactions — users can ask or instruct the chatbot to perform expense operations instead of clicking through multiple screens.
 
-## Công nghệ sử dụng
+## Tech Stack
 
 ### Backend
-- **Go** 1.25+ — ngôn ngữ chính
+- **Go** 1.25+ — primary language
 - **Echo** — HTTP framework
-- **GORM** — ORM cho PostgreSQL
-- **PostgreSQL 16** — cơ sở dữ liệu chính (chạy qua Docker)
-- **Redis 7** — cache / session (chạy qua Docker)
-- **Viper** — đọc cấu hình từ file `.env`
-- **slog** — logging có cấu trúc
+- **GORM** — ORM for PostgreSQL
+- **PostgreSQL 16** — main database (runs via Docker)
+- **Redis 7** — cache / session store (runs via Docker)
+- **Viper** — configuration loader (reads `.env`)
+- **slog** — structured logging
 
 ### Frontend
 - **React 19** + **TypeScript**
@@ -20,9 +20,9 @@ Dự án cá nhân để quản lý chi tiêu, tích hợp chatbot MCP để tha
 - **ESLint** — linting
 
 ### Infrastructure
-- **Docker Compose** — khởi động PostgreSQL + Redis
+- **Docker Compose** — spins up PostgreSQL + Redis
 
-## Cấu trúc thư mục
+## Directory Structure
 
 ```
 .
@@ -31,7 +31,7 @@ Dự án cá nhân để quản lý chi tiêu, tích hợp chatbot MCP để tha
 │   │   └── server/
 │   │       └── main.go      # Entry point
 │   └── internal/
-│       ├── config/          # Đọc & validate config từ .env
+│       ├── config/          # Reads & validates config from .env
 │       ├── logger/          # slog wrapper
 │       ├── platform/
 │       │   └── db/          # GORM / Postgres connection
@@ -51,7 +51,7 @@ Dự án cá nhân để quản lý chi tiêu, tích hợp chatbot MCP để tha
 └── Makefile                 # init, run
 ```
 
-## Yêu cầu môi trường
+## Prerequisites
 
 - Node.js 20+
 - pnpm 11+
@@ -59,40 +59,40 @@ Dự án cá nhân để quản lý chi tiêu, tích hợp chatbot MCP để tha
 - Docker + Docker Compose
 - Make
 
-## Hư�ng dẫn Setup
+## Setup
 
-### 1. Khởi tạo dự án
+### 1. Initialize the project
 
-Chạy lệnh sau để cài dependencies, copy file env mẫu, và chuẩn bị Docker infrastructure:
+Run the following to install dependencies, copy env templates, and prepare the Docker infrastructure:
 
 ```bash
 make init
 ```
 
-Script sẽ:
-- Cài JS dependencies cho `frontend/`
-- Tải Go modules cho `backend/`
-- Cài `air` (live reload cho Go)
+The script will:
+- Install JS dependencies in `frontend/`
+- Download Go modules in `backend/`
+- Install `air` (live reload for Go)
 - Copy `backend/.env.example` → `backend/.env`
 - Copy `frontend/.env.example` → `frontend/.env`
 
-Sau bước này, **mở `backend/.env` và sửa các giá trị mặc định** (đặc biệt `POSTGRES_PASSWORD`) trước khi khởi động infrastructure. Script sẽ hỏi bạn có muốn khởi động Docker ngay hay không.
+After this step, **open `backend/.env` and replace the default values** (especially `POSTGRES_PASSWORD`) before starting the infrastructure. The script will ask whether you want to start Docker now.
 
-### 2. Khởi động infrastructure
+### 2. Start infrastructure
 
-Nếu đã chọn `N` ở bước trước, hoặc muốn khởi động lại:
+If you chose `N` above, or want to restart the services:
 
 ```bash
 docker compose -f docker-compose.yaml up -d
 ```
 
-Kiểm tra trạng thái:
+Check service status:
 
 ```bash
 docker compose -f docker-compose.yaml ps
 ```
 
-## Chạy dự án ở local
+## Running locally
 
 ### Backend
 
@@ -100,9 +100,9 @@ docker compose -f docker-compose.yaml ps
 make run
 ```
 
-Server sẽ chạy ở `http://localhost:8080`.
+Server runs at `http://localhost:8080`.
 
-Kiểm tra health:
+Verify health:
 
 ```bash
 curl http://localhost:8080/health
@@ -116,7 +116,7 @@ cd frontend
 pnpm dev
 ```
 
-Frontend sẽ chạy ở `http://localhost:3000`.
+Frontend runs at `http://localhost:3000`.
 
 ### Ports
 
