@@ -25,7 +25,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	gormDB, err := db.NewGormConfig(cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresName, cfg.PostgresPort)
+	gormDB, err := db.NewGormConfig(cfg.PostgresHost, cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresName, cfg.PostgresPort)
 	if err != nil {
 		slog.Error("fail to create gorm config", slog.Any("error", err))
 		os.Exit(1)

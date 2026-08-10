@@ -1,0 +1,32 @@
+# VCS metadata — git is not needed inside the image.
+.git
+.gitignore
+
+# Local env files. .env.example IS copied (or rather, not needed at runtime
+# since the app reads env vars directly). We exclude both to be safe.
+.env
+.env.*
+!.env.example
+
+# Editor / OS junk.
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode
+.idea
+
+# Build artifacts that should be produced inside the container, not copied.
+# Keeping them out of the build context also shrinks the context tarball
+# (and therefore `docker build` upload time on slow networks).
+/main
+/server
+/bin/
+/dist/
+*.test
+*.out
+
+# Migration SQL is included — the runtime doesn't apply them yet but
+# keeping them in the build context lets a future migration step pick
+# them up. If you'd rather exclude them, uncomment the next line.
+# /migration/*.sql

@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Port             string   `mapstructure:"PORT"`
 	Environment      string   `mapstructure:"ENVIRONMENT"`
+	PostgresHost     string   `mapstructure:"POSTGRES_HOST"`
 	PostgresUser     string   `mapstructure:"POSTGRES_USER"`
 	PostgresPassword string   `mapstructure:"POSTGRES_PASSWORD"`
 	PostgresName     string   `mapstructure:"POSTGRES_DB"`
@@ -23,6 +24,7 @@ func LoadConfig() (*Config, error) {
 
 	viper.SetDefault("PORT", "8080")
 	viper.SetDefault("ENVIRONMENT", "local")
+	viper.SetDefault("POSTGRES_HOST", "localhost")
 	viper.SetDefault("POSTGRES_USER", "user")
 	viper.SetDefault("POSTGRES_PASSWORD", "password")
 	viper.SetDefault("POSTGRES_DB", "dbname")
