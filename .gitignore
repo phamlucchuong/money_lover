@@ -1,6 +1,4 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
+# ─── Go (backend/) ───────────────────────────────────────────────
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -17,16 +15,54 @@ coverage.*
 *.coverprofile
 profile.cov
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
-
 # Go workspace file
 go.work
 go.work.sum
 
-# env file
-.env
+# Compiled binaries (if backend/ ever builds with `go build` instead of `go run`)
+backend/bin/
+backend/server
+backend/server.exe
 
-# Editor/IDE
-# .idea/
-# .vscode/
+# ─── Environment files ───────────────────────────────────────────
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+!.env.example
+
+# ─── Logs ────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ─── OS junk ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Editor / IDE ────────────────────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.sw?
+*.swo
+
+# ─── Frontend ────────────────────────────────────────────────────
+# Defense-in-depth: frontend/.gitignore already covers these, but
+# keep them here in case the frontend dir is ever moved or shared.
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# ─── mcp-server (placeholder — will fill in when implemented) ───
+mcp-server/node_modules/
+mcp-server/dist/
+mcp-server/build/
+
+# ─── Claude / AI tooling ─────────────────────────────────────────
+.claude/settings.local.json
