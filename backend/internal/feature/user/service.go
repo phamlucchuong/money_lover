@@ -4,9 +4,9 @@ import (
 	"chuongpl/quan-ly-chi-tieu/internal/config"
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -15,28 +15,29 @@ var (
 	ErrUserAlreadyExists = errors.New("user already exists")
 )
 
-type ServiceInterface interface {
-	CreateUser(ctx context.Context, req CreateUserRequest) (*UserResponse, error)
+type Service interface {
+	Create(ctx context.Context, req CreateUserRequest) (*UserResponse, error)
+	GetByID(ctx context.Context, userID uuid.UUID) (*UserResponse, error)
 }
 
-type Service struct {
-	repo RepositoryInterface
+type service struct {
+	repo Repository
 	cfg  *config.Config
 	log  *slog.Logger
 }
 
-func NewService(repo RepositoryInterface, cfg *config.Config, log *slog.Logger) *Service {
-	return &Service{
+func NewService(repo Repository, cfg *config.Config, log *slog.Logger) Service {
+	return &service{
 		repo: repo,
 		cfg:  cfg,
 		log:  log,
 	}
 }
 
-func (s *Service) CreateUser(ctx context.Context, req CreateUserRequest) (*UserResponse, error) {
-	existing, err := s.repo.GetUserByEmailAndDeletedAtIsNull(ctx, req.Email)
+func (s *service) Create(ctx context.Context, req CreateUserRequest) (*UserResponse, error) {
+	existing, err := s.repo.GetByEmailAndDeletedAtIsNull(ctx, req.Email)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("check existing user: %w", err)
+		return nil, err
 	}
 
 	if existing != nil {
@@ -49,17 +50,30 @@ func (s *Service) CreateUser(ctx context.Context, req CreateUserRequest) (*UserR
 		Password: req.Password,
 	}
 
-	if err = s.repo.CreateUser(ctx, user); err != nil {
-		return nil, fmt.Errorf("create user: %w", err)
+	if err = s.repo.Create(ctx, user); err != nil {
+		return nil, err
 	}
 
 	return &UserResponse{
-		ID:    user.ID.String(),
+		ID:    user.ID,
 		Name:  user.Name,
 		Email: user.Email,
 	}, nil
 }
 
-// func (s *Service) GetAll() ([]*User, error) {
-
-// }
+func (s *service) GetByID(ctx context.Context, userID uuid.UUID) (*UserResponse, error) {
+	user, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			return nil, ErrUserNotFound
+		default:
+			return nil, err
+		}
+	}
+	return &UserResponse{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+	}, nil
+}
