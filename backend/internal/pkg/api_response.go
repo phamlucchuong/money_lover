@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	CodeBadeRequest         = 400
+	CodeBadRequest          = 400
 	CodeConflict            = 409
 	CodeNotFound            = 404
 	CodeInternalServerError = 500

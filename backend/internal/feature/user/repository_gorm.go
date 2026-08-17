@@ -46,14 +46,21 @@ func (r *repository) GetByEmailAndDeletedAtIsNull(ctx context.Context, email str
 	return &user, nil
 }
 
-func (r *repository) GetAll(ctx context.Context) ([]*User, error) {
+func (r *repository) GetAll(ctx context.Context, offset, limit int) ([]*User, int64, error) {
 	var users []*User
-	err := r.db.WithContext(ctx).Find(&users).Error
+	var total int64
+
+	err := r.db.WithContext(ctx).Model(&User{}).Count(&total).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return users, nil
+	err = r.db.WithContext(ctx).Offset(offset).Limit(limit).Find(&users).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return users, total, nil
 }
 
 func (r *repository) Update(ctx context.Context, user *User) error {

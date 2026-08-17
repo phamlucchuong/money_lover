@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"chuongpl/quan-ly-chi-tieu/internal/feature/user"
+	"chuongpl/quan-ly-chi-tieu/internal/pkg"
 	usermocks "chuongpl/quan-ly-chi-tieu/internal/feature/user/mocks"
 
 	"github.com/google/uuid"
@@ -163,6 +164,115 @@ func TestService_GetByID(t *testing.T) {
 				assert.Equal(t, tc.expectedResp.ID, resp.ID)
 				assert.Equal(t, tc.expectedResp.Name, resp.Name)
 				assert.Equal(t, tc.expectedResp.Email, resp.Email)
+			}
+
+			mockrepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_GetAllUsers(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	testCases := []struct {
+		name         string
+		page         int
+		pageSize     int
+		mockSetup    func(repo *usermocks.MockRepository, offset, limit int)
+		expectedLen  int
+		expectedMeta *pkg.PaginationMeta
+		expectedErr  error
+	}{
+		{
+			name:     "page 1 returns first page",
+			page:     1,
+			pageSize: 20,
+			mockSetup: func(repo *usermocks.MockRepository, offset, limit int) {
+				repo.EXPECT().GetAll(mock.Anything, offset, limit).
+					Return([]*user.User{
+						{ID: uuid.New(), Name: "Alice", Email: "alice@example.com"},
+						{ID: uuid.New(), Name: "Bob", Email: "bob@example.com"},
+					}, int64(2), nil)
+			},
+			expectedLen: 2,
+			expectedMeta: &pkg.PaginationMeta{
+				Page:       1,
+				PageSize:   20,
+				TotalItems: 2,
+				TotalPages: 1,
+			},
+		},
+		{
+			name:     "page 2 uses offset 20",
+			page:     2,
+			pageSize: 20,
+			mockSetup: func(repo *usermocks.MockRepository, offset, limit int) {
+				repo.EXPECT().GetAll(mock.Anything, offset, limit).
+					Return([]*user.User{}, int64(45), nil)
+			},
+			expectedLen: 0,
+			expectedMeta: &pkg.PaginationMeta{
+				Page:       2,
+				PageSize:   20,
+				TotalItems: 45,
+				TotalPages: 3,
+			},
+		},
+		{
+			name:     "empty list returns total_pages 0",
+			page:     1,
+			pageSize: 20,
+			mockSetup: func(repo *usermocks.MockRepository, offset, limit int) {
+				repo.EXPECT().GetAll(mock.Anything, offset, limit).
+					Return([]*user.User{}, int64(0), nil)
+			},
+			expectedLen: 0,
+			expectedMeta: &pkg.PaginationMeta{
+				Page:       1,
+				PageSize:   20,
+				TotalItems: 0,
+				TotalPages: 0,
+			},
+		},
+		{
+			name:     "repo error propagated",
+			page:     1,
+			pageSize: 20,
+			mockSetup: func(repo *usermocks.MockRepository, offset, limit int) {
+				repo.EXPECT().GetAll(mock.Anything, offset, limit).
+					Return(nil, int64(0), gorm.ErrInvalidDB)
+			},
+			expectedLen: 0,
+			expectedErr: gorm.ErrInvalidDB,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			mockrepo := new(usermocks.MockRepository)
+			offset := (tc.page - 1) * tc.pageSize
+			tc.mockSetup(mockrepo, offset, tc.pageSize)
+
+			svc := user.NewService(mockrepo, nil, nil)
+			users, meta, err := svc.GetAllUsers(ctx, tc.page, tc.pageSize)
+
+			if tc.expectedErr != nil {
+				require.Error(t, err)
+				assert.ErrorIs(t, err, tc.expectedErr)
+				assert.Nil(t, users)
+				assert.Nil(t, meta)
+			} else {
+				require.NoError(t, err)
+				assert.Len(t, users, tc.expectedLen)
+				require.NotNil(t, meta)
+				assert.Equal(t, tc.expectedMeta.Page, meta.Page)
+				assert.Equal(t, tc.expectedMeta.PageSize, meta.PageSize)
+				assert.Equal(t, tc.expectedMeta.TotalItems, meta.TotalItems)
+				assert.Equal(t, tc.expectedMeta.TotalPages, meta.TotalPages)
 			}
 
 			mockrepo.AssertExpectations(t)

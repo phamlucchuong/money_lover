@@ -2,9 +2,11 @@ package user
 
 import (
 	"chuongpl/quan-ly-chi-tieu/internal/config"
+	"chuongpl/quan-ly-chi-tieu/internal/pkg"
 	"context"
 	"errors"
 	"log/slog"
+	"math"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -18,6 +20,7 @@ var (
 type Service interface {
 	Create(ctx context.Context, req CreateUserRequest) (*UserResponse, error)
 	GetByID(ctx context.Context, userID uuid.UUID) (*UserResponse, error)
+	GetAllUsers(ctx context.Context, page, pageSize int) ([]*UserResponse, *pkg.PaginationMeta, error)
 }
 
 type service struct {
@@ -76,4 +79,35 @@ func (s *service) GetByID(ctx context.Context, userID uuid.UUID) (*UserResponse,
 		Name:  user.Name,
 		Email: user.Email,
 	}, nil
+}
+
+func (s *service) GetAllUsers(ctx context.Context, page, pageSize int) ([]*UserResponse, *pkg.PaginationMeta, error) {
+	offset := (page - 1) * pageSize
+	users, total, err := s.repo.GetAll(ctx, offset, pageSize)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	responses := make([]*UserResponse, 0, len(users))
+	for _, u := range users {
+		responses = append(responses, &UserResponse{
+			ID:    u.ID,
+			Name:  u.Name,
+			Email: u.Email,
+		})
+	}
+
+	totalPages := 0
+	if total > 0 {
+		totalPages = int(math.Ceil(float64(total) / float64(pageSize)))
+	}
+
+	meta := &pkg.PaginationMeta{
+		Page:       page,
+		PageSize:   pageSize,
+		TotalItems: int(total),
+		TotalPages: totalPages,
+	}
+
+	return responses, meta, nil
 }
