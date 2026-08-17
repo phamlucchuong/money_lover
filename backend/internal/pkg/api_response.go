@@ -7,6 +7,14 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
+var (
+	CodeBadeRequest         = 400
+	CodeConflict            = 409
+	CodeNotFound            = 404
+	CodeInternalServerError = 500
+	CodeValidationError     = 422
+)
+
 type APIError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`

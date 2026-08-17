@@ -1,0 +1,11 @@
+with-expecter: true
+mockname: "Mock{{.InterfaceName}}"
+outpkg: "{{.PackageName}}mocks" # Đặt tên package rõ ràng, ví dụ: usermocks, ordermocks
+filename: "mock_{{.InterfaceNameLower}}.go" # Chuẩn tên file snake_case: mock_user_repository.go
+dir: "{{.InterfaceDirRelative}}/mocks" # Co-located mocks ngay trong package domain
+
+packages:
+  # Module 1: User
+  chuongpl/quan-ly-chi-tieu/internal/feature/user:
+    interfaces:
+      Repository:

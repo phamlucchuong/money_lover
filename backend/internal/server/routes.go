@@ -9,6 +9,12 @@ import (
 func (s *Server) SetupRoutes() {
 	s.echo.GET("/health", s.healthCheck)
 
+	v1 := s.echo.Group("/api/v1")
+
+	authGroup := v1.Group("/auth")
+	authGroup.POST("/register", s.userHandler.CreateUser)
+
+	// userGroup := v1.Group("/user")
 }
 
 func (s *Server) healthCheck(c *echo.Context) error {

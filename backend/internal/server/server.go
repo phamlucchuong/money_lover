@@ -2,6 +2,7 @@ package server
 
 import (
 	"chuongpl/quan-ly-chi-tieu/internal/config"
+	"chuongpl/quan-ly-chi-tieu/internal/feature/user"
 	"context"
 	"log/slog"
 	"time"
@@ -11,10 +12,12 @@ import (
 )
 
 type Server struct {
-	echo   *echo.Echo
-	cfg    *config.Config
-	log    *slog.Logger
-	gormDB *gorm.DB
+	echo        *echo.Echo
+	cfg         *config.Config
+	log         *slog.Logger
+	gormDB      *gorm.DB
+	userHandler *user.Handler
+	userService user.Service
 }
 
 func NewServer(cfg *config.Config, log *slog.Logger, gormDB *gorm.DB) *Server {
@@ -26,6 +29,11 @@ func NewServer(cfg *config.Config, log *slog.Logger, gormDB *gorm.DB) *Server {
 		gormDB: gormDB,
 	}
 
+	userRepo := user.NewRepository(gormDB)
+	s.userService = user.NewService(userRepo, cfg, log)
+	s.userHandler = user.NewHandler(s.userService, cfg, log)
+
+	s.echo.Validator = NewValidator()
 	s.SetupRoutes()
 
 	return s
