@@ -17,7 +17,7 @@ type Server struct {
 	log         *slog.Logger
 	gormDB      *gorm.DB
 	userHandler *user.Handler
-	userService *user.Service
+	userService user.Service
 }
 
 func NewServer(cfg *config.Config, log *slog.Logger, gormDB *gorm.DB) *Server {

@@ -11,12 +11,12 @@ import (
 )
 
 type Handler struct {
-	svc ServiceInterface
+	svc Service
 	cfg *config.Config
 	log *slog.Logger
 }
 
-func NewHandler(svc ServiceInterface, cfg *config.Config, log *slog.Logger) *Handler {
+func NewHandler(svc Service, cfg *config.Config, log *slog.Logger) *Handler {
 	return &Handler{
 		svc: svc,
 		cfg: cfg,
@@ -33,7 +33,7 @@ func (h *Handler) CreateUser(c *echo.Context) error {
 		return pkg.JSONError(c, http.StatusUnprocessableEntity, pkg.CodeValidationError, err.Error())
 	}
 
-	resp, err := h.svc.CreateUser(c.Request().Context(), req)
+	resp, err := h.svc.Create(c.Request().Context(), req)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrUserAlreadyExists):

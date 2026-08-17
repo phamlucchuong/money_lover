@@ -1,5 +1,7 @@
 package user
 
+import "github.com/google/uuid"
+
 type CreateUserRequest struct {
 	Email    string `json:"email" validate:"required,email,size:254"`
 	Name     string `json:"name" validate:"required,size:254"`
@@ -7,7 +9,7 @@ type CreateUserRequest struct {
 }
 
 type UserResponse struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	ID    uuid.UUID `json:"id"`
+	Name  string    `json:"name"`
+	Email string    `json:"email"`
 }
