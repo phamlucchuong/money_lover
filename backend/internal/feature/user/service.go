@@ -3,12 +3,14 @@ package user
 import (
 	"chuongpl/quan-ly-chi-tieu/internal/config"
 	"chuongpl/quan-ly-chi-tieu/internal/pkg"
+	"chuongpl/quan-ly-chi-tieu/internal/platform/db"
 	"context"
 	"errors"
 	"log/slog"
 	"math"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -47,13 +49,21 @@ func (s *service) Create(ctx context.Context, req CreateUserRequest) (*UserRespo
 		return nil, ErrUserAlreadyExists
 	}
 
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
 	user := &User{
 		Email:    req.Email,
 		Name:     req.Name,
-		Password: req.Password,
+		Password: string(hashedPassword),
 	}
 
 	if err = s.repo.Create(ctx, user); err != nil {
+		if db.IsUniqueViolation(err) {
+			return nil, ErrUserAlreadyExists
+		}
 		return nil, err
 	}
 
