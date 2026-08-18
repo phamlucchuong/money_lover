@@ -89,3 +89,52 @@ func (h *Handler) GetAllUsers(c *echo.Context) error {
 
 	return pkg.JSONList(c, users, *meta)
 }
+
+func (h *Handler) UpdateUser(c *echo.Context) error {
+	userID, err := uuid.Parse(c.Param("user_id"))
+	if err != nil {
+		return pkg.JSONError(c, http.StatusBadRequest, pkg.CodeBadRequest, "invalid user ID")
+	}
+
+	var req UpdateUserRequest
+	if err := c.Bind(&req); err != nil {
+		return pkg.JSONError(c, http.StatusBadRequest, pkg.CodeBadRequest, "invalid request body")
+	}
+
+	if err := c.Validate(&req); err != nil {
+		return pkg.JSONError(c, http.StatusBadRequest, pkg.CodeBadRequest, "")
+	}
+
+	resp, err := h.svc.Update(c.Request().Context(), userID, req)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrUserNotFound):
+			return pkg.JSONError(c, http.StatusNotFound, pkg.CodeNotFound, "user not found")
+		default:
+			h.log.Error("update user failed", slog.String("user_id", userID.String()), slog.String("error", err.Error()))
+			return pkg.JSONError(c, http.StatusInternalServerError, pkg.CodeInternalServerError, "internal server error")
+		}
+	}
+
+	return pkg.JSONOK(c, resp)
+}
+
+func (h *Handler) DeleteUser(c *echo.Context) error {
+	userID, err := uuid.Parse(c.Param("user_id"))
+	if err != nil {
+		return pkg.JSONError(c, http.StatusBadRequest, pkg.CodeBadRequest, "invalid user ID")
+	}
+
+	err = h.svc.Delete(c.Request().Context(), userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrUserNotFound):
+			return pkg.JSONError(c, http.StatusNotFound, pkg.CodeNotFound, "user not found")
+		default:
+			h.log.Error("delete user failed", slog.String("user_id", userID.String()), slog.String("error", err.Error()))
+			return pkg.JSONError(c, http.StatusInternalServerError, pkg.CodeInternalServerError, "internal server error")
+		}
+	}
+
+	return pkg.JSONOK(c, map[string]interface{}{"message": "user deleted successfully"})
+}

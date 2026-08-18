@@ -23,6 +23,8 @@ type Service interface {
 	Create(ctx context.Context, req CreateUserRequest) (*UserResponse, error)
 	GetByID(ctx context.Context, userID uuid.UUID) (*UserResponse, error)
 	GetAllUsers(ctx context.Context, page, pageSize int) ([]*UserResponse, *pkg.PaginationMeta, error)
+	Update(ctx context.Context, userID uuid.UUID, req UpdateUserRequest) (*UserResponse, error)
+	Delete(ctx context.Context, userID uuid.UUID) error
 }
 
 type service struct {
@@ -120,4 +122,53 @@ func (s *service) GetAllUsers(ctx context.Context, page, pageSize int) ([]*UserR
 	}
 
 	return responses, meta, nil
+}
+
+func (s *service) Update(ctx context.Context, userID uuid.UUID, req UpdateUserRequest) (*UserResponse, error) {
+	user, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			return nil, ErrUserNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	if req.Email != "" {
+		user.Email = req.Email
+	}
+
+	if req.Name != "" {
+		user.Name = req.Name
+	}
+
+	if req.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, err
+		}
+		user.Password = string(hashedPassword)
+	}
+
+	if err := s.repo.Update(ctx, user); err != nil {
+		if db.IsUniqueViolation(err) {
+			return nil, ErrUserAlreadyExists
+		}
+		return nil, err
+	}
+
+	return &UserResponse{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+	}, nil
+}
+
+func (s *service) Delete(ctx context.Context, userID uuid.UUID) error {
+	err := s.repo.Delete(ctx, userID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrUserNotFound
+	}
+	return err
 }

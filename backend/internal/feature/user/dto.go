@@ -8,6 +8,12 @@ type CreateUserRequest struct {
 	Password string `json:"password" validate:"required,min:6,max:254"`
 }
 
+type UpdateUserRequest struct {
+	Email    string `json:"email" validate:"omitempty,email,size:254"`
+	Name     string `json:"name" validate:"omitempty,size:254"`
+	Password string `json:"password" validate:"omitempty,min:6,max:254"`
+}
+
 type UserResponse struct {
 	ID    uuid.UUID `json:"id"`
 	Name  string    `json:"name"`
