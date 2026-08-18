@@ -17,6 +17,8 @@ func (s *Server) SetupRoutes() {
 	userGroup := v1.Group("/users")
 	userGroup.GET("", s.userHandler.GetAllUsers)
 	userGroup.GET("/:id", s.userHandler.GetUserByID)
+	userGroup.PUT("/:id", s.userHandler.UpdateUser)
+	userGroup.DELETE("/:id", s.userHandler.DeleteUser)
 }
 
 func (s *Server) healthCheck(c *echo.Context) error {
