@@ -2,6 +2,7 @@ package user_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"chuongpl/quan-ly-chi-tieu/internal/feature/user"
@@ -9,9 +10,11 @@ import (
 	usermocks "chuongpl/quan-ly-chi-tieu/internal/feature/user/mocks"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -48,9 +51,10 @@ func TestService_Create(t *testing.T) {
 					Return(nil, gorm.ErrRecordNotFound)
 
 				repo.EXPECT().Create(mock.Anything, mock.MatchedBy(func(u *user.User) bool {
+					err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(validReq.Password))
 					return u.Email == validReq.Email &&
 						u.Name == validReq.Name &&
-						u.Password == validReq.Password
+						err == nil
 				})).
 					RunAndReturn(func(ctx context.Context, u *user.User) error {
 						u.ID = mockUserID
@@ -64,6 +68,20 @@ func TestService_Create(t *testing.T) {
 				Email: validReq.Email,
 			},
 			expectedError: nil,
+		},
+		{
+			name: "unique violation race condition",
+			req:  validReq,
+			mockSetup: func(repo *usermocks.MockRepository) {
+				repo.EXPECT().GetByEmailAndDeletedAtIsNull(mock.Anything, validReq.Email).
+					Return(nil, gorm.ErrRecordNotFound)
+
+				pgErr := &pgconn.PgError{Code: "23505"}
+				repo.EXPECT().Create(mock.Anything, mock.Anything).
+					Return(fmt.Errorf("create user: %w", pgErr))
+			},
+			expectedResp:  nil,
+			expectedError: user.ErrUserAlreadyExists,
 		},
 	}
 
