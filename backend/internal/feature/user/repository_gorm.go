@@ -64,9 +64,27 @@ func (r *repository) GetAll(ctx context.Context, offset, limit int) ([]*User, in
 }
 
 func (r *repository) Update(ctx context.Context, user *User) error {
-	return r.db.WithContext(ctx).Updates(user).Error
+	result := r.db.WithContext(ctx).Updates(user)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }
 
 func (r *repository) Delete(ctx context.Context, userID uuid.UUID) error {
-	return r.db.WithContext(ctx).Where("id = ?", userID).Update("deleted_at", gorm.Expr("NOW()")).Error
+	result := r.db.WithContext(ctx).Delete(&User{}, userID)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }
