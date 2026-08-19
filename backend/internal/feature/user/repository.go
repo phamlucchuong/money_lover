@@ -12,7 +12,7 @@ type Repository interface {
 	Create(ctx context.Context, user *User) error
 	GetByID(ctx context.Context, userID uuid.UUID) (*User, error)
 	GetByEmailAndDeletedAtIsNull(ctx context.Context, email string) (*User, error)
-	GetAll(ctx context.Context) ([]*User, error)
+	GetAll(ctx context.Context, offset, limit int) ([]*User, int64, error)
 	Update(ctx context.Context, user *User) error
 	Delete(ctx context.Context, userID uuid.UUID) error
 }

@@ -118,34 +118,41 @@ func (_c *MockRepository_Delete_Call) RunAndReturn(run func(context.Context, uui
 	return _c
 }
 
-// GetAll provides a mock function with given fields: ctx
-func (_m *MockRepository) GetAll(ctx context.Context) ([]*user.User, error) {
-	ret := _m.Called(ctx)
+// GetAll provides a mock function with given fields: ctx, offset, limit
+func (_m *MockRepository) GetAll(ctx context.Context, offset int, limit int) ([]*user.User, int64, error) {
+	ret := _m.Called(ctx, offset, limit)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAll")
 	}
 
 	var r0 []*user.User
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]*user.User, error)); ok {
-		return rf(ctx)
+	var r1 int64
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, int) ([]*user.User, int64, error)); ok {
+		return rf(ctx, offset, limit)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) []*user.User); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, int, int) []*user.User); ok {
+		r0 = rf(ctx, offset, limit)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*user.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, int, int) int64); ok {
+		r1 = rf(ctx, offset, limit)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(int64)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context, int, int) error); ok {
+		r2 = rf(ctx, offset, limit)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // MockRepository_GetAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAll'
@@ -155,23 +162,25 @@ type MockRepository_GetAll_Call struct {
 
 // GetAll is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockRepository_Expecter) GetAll(ctx interface{}) *MockRepository_GetAll_Call {
-	return &MockRepository_GetAll_Call{Call: _e.mock.On("GetAll", ctx)}
+//   - offset int
+//   - limit int
+func (_e *MockRepository_Expecter) GetAll(ctx interface{}, offset interface{}, limit interface{}) *MockRepository_GetAll_Call {
+	return &MockRepository_GetAll_Call{Call: _e.mock.On("GetAll", ctx, offset, limit)}
 }
 
-func (_c *MockRepository_GetAll_Call) Run(run func(ctx context.Context)) *MockRepository_GetAll_Call {
+func (_c *MockRepository_GetAll_Call) Run(run func(ctx context.Context, offset int, limit int)) *MockRepository_GetAll_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(context.Context), args[1].(int), args[2].(int))
 	})
 	return _c
 }
 
-func (_c *MockRepository_GetAll_Call) Return(_a0 []*user.User, _a1 error) *MockRepository_GetAll_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *MockRepository_GetAll_Call) Return(_a0 []*user.User, _a1 int64, _a2 error) *MockRepository_GetAll_Call {
+	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *MockRepository_GetAll_Call) RunAndReturn(run func(context.Context) ([]*user.User, error)) *MockRepository_GetAll_Call {
+func (_c *MockRepository_GetAll_Call) RunAndReturn(run func(context.Context, int, int) ([]*user.User, int64, error)) *MockRepository_GetAll_Call {
 	_c.Call.Return(run)
 	return _c
 }

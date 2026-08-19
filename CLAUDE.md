@@ -58,3 +58,23 @@ Layered by concern under `internal/`:
 - `backend/.env` is gitignored; only `.env.example` is tracked. `bootstrap.sh` copies one from the other.
 - The frontend's `App.tsx` is still the Vite starter template — real UI work hasn't started.
 - The repo recently moved on GitHub; `git push` may print a redirect notice to `money_lover.git`. Push still works.
+
+## Commit grouping
+
+When asked to commit, split the work into multiple commits grouped by **concern / layer**, not by file or by hunk size. One commit = one coherent change that can stand on its own, be reverted independently, and reviewed without reading the whole stack.
+
+Group by these axes — pick whichever applies, but never blend them in a single commit:
+
+- **Refactor vs. feature vs. fix vs. chore** — a model rename is `refactor:`, never folded into a `feat:` that adds new behavior.
+- **Layer / package** — `feat(db):` (helpers in `internal/platform/db`) is separate from `feat(user):` (feature logic), even when both ship in the same PR.
+- **Migrations vs. code** — schema changes (under `backend/migrations/`) get their own commit so a rollback can drop the index without reverting application code.
+- **Tests vs. production code** — a `test:` or `test(<area>):` commit lands separately when it covers behavior introduced by an earlier commit in the same branch. Avoid bundling a fix with its test in one commit unless the test is non-load-bearing (e.g. snapshot noise).
+- **Wiring / plumbing** — route registration, config keys, generated mocks belong in `chore(<area>):`, not in the `feat:` that introduces the handler.
+
+Concrete rules:
+
+1. Stage with `git add -p` (or write a partial patch and `git apply --cached`) when a single file mixes concerns. Do not `git add .` and accept whatever hunks land together.
+2. After staging, run `git diff --cached --stat` to confirm only the intended files are staged. If a file shows up that you didn't plan to include, `git restore --staged <file>` and re-stage the hunks you want.
+3. Build (`cd backend && go build ./...`) and run the relevant tests after each commit — not just after the last one. A commit that breaks the tree is not acceptable.
+4. Commit messages follow Conventional Commits: `<type>(<scope>): <imperative summary>`. Body explains *why*, not *what*. Don't add a `Co-Authored-By: Claude` trailer (see project memory).
+5. Never push without an explicit ask — see project memory.
