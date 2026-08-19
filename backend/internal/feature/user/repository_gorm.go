@@ -55,7 +55,7 @@ func (r *repository) GetAll(ctx context.Context, offset, limit int) ([]*User, in
 		return nil, 0, err
 	}
 
-	err = r.db.WithContext(ctx).Offset(offset).Limit(limit).Find(&users).Error
+	err = r.db.WithContext(ctx).Offset(offset).Limit(limit).Find(&users).Order("created_at DESC, id ASC").Error
 	if err != nil {
 		return nil, 0, err
 	}
