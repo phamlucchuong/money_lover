@@ -98,11 +98,11 @@ func (h *Handler) UpdateUser(c *echo.Context) error {
 
 	var req UpdateUserRequest
 	if err := c.Bind(&req); err != nil {
-		return pkg.JSONError(c, http.StatusBadRequest, pkg.CodeBadRequest, "invalid request body")
+		return pkg.JSONError(c, http.StatusBadRequest, pkg.CodeBadRequest, "invalid request data")
 	}
 
 	if err := c.Validate(&req); err != nil {
-		return pkg.JSONError(c, http.StatusBadRequest, pkg.CodeBadRequest, "")
+		return pkg.JSONError(c, http.StatusUnprocessableEntity, pkg.CodeValidationError, "invalid request data")
 	}
 
 	resp, err := h.svc.Update(c.Request().Context(), userID, req)
@@ -110,6 +110,8 @@ func (h *Handler) UpdateUser(c *echo.Context) error {
 		switch {
 		case errors.Is(err, ErrUserNotFound):
 			return pkg.JSONError(c, http.StatusNotFound, pkg.CodeNotFound, "user not found")
+		case errors.Is(err, ErrUserAlreadyExists):
+			return pkg.JSONError(c, http.StatusConflict, pkg.CodeConflict, "user already exists")
 		default:
 			h.log.Error("update user failed", slog.String("user_id", userID.String()), slog.String("error", err.Error()))
 			return pkg.JSONError(c, http.StatusInternalServerError, pkg.CodeInternalServerError, "internal server error")
