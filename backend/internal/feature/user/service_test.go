@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"testing"
 
+	"chuongpl/quan-ly-chi-tieu/internal/feature/auth"
 	"chuongpl/quan-ly-chi-tieu/internal/feature/user"
-	"chuongpl/quan-ly-chi-tieu/internal/pkg"
 	usermocks "chuongpl/quan-ly-chi-tieu/internal/feature/user/mocks"
+	"chuongpl/quan-ly-chi-tieu/internal/pkg"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -30,7 +31,7 @@ func TestService_Create(t *testing.T) {
 	// 1. Tạo sẵn mock ID cố định
 	mockUserID := uuid.MustParse("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
 
-	validReq := user.CreateUserRequest{
+	validReq := auth.RegisterRequest{
 		Email:    "test@example.com",
 		Name:     "Test User",
 		Password: "password123",
@@ -38,7 +39,7 @@ func TestService_Create(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		req           user.CreateUserRequest
+		req           auth.RegisterRequest
 		mockSetup     func(repo *usermocks.MockRepository)
 		expectedResp  *user.UserResponse
 		expectedError error

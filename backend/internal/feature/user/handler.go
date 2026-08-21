@@ -2,6 +2,7 @@ package user
 
 import (
 	"chuongpl/quan-ly-chi-tieu/internal/config"
+	"chuongpl/quan-ly-chi-tieu/internal/feature/auth"
 	"chuongpl/quan-ly-chi-tieu/internal/pkg"
 	"errors"
 	"log/slog"
@@ -26,7 +27,7 @@ func NewHandler(svc Service, cfg *config.Config, log *slog.Logger) *Handler {
 }
 
 func (h *Handler) CreateUser(c *echo.Context) error {
-	var req CreateUserRequest
+	var req auth.RegisterRequest
 	if err := c.Bind(&req); err != nil {
 		return pkg.JSONError(c, http.StatusBadRequest, pkg.CodeBadRequest, "invalid request data")
 	}

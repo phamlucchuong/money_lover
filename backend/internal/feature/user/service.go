@@ -2,6 +2,7 @@ package user
 
 import (
 	"chuongpl/quan-ly-chi-tieu/internal/config"
+	"chuongpl/quan-ly-chi-tieu/internal/feature/auth"
 	"chuongpl/quan-ly-chi-tieu/internal/pkg"
 	"chuongpl/quan-ly-chi-tieu/internal/platform/db"
 	"context"
@@ -20,7 +21,7 @@ var (
 )
 
 type Service interface {
-	Create(ctx context.Context, req CreateUserRequest) (*UserResponse, error)
+	Create(ctx context.Context, req auth.RegisterRequest) (*UserResponse, error)
 	GetByID(ctx context.Context, userID uuid.UUID) (*UserResponse, error)
 	GetAllUsers(ctx context.Context, page, pageSize int) ([]*UserResponse, *pkg.PaginationMeta, error)
 	Update(ctx context.Context, userID uuid.UUID, req UpdateUserRequest) (*UserResponse, error)
@@ -41,7 +42,7 @@ func NewService(repo Repository, cfg *config.Config, log *slog.Logger) Service {
 	}
 }
 
-func (s *service) Create(ctx context.Context, req CreateUserRequest) (*UserResponse, error) {
+func (s *service) Create(ctx context.Context, req auth.RegisterRequest) (*UserResponse, error) {
 	existing, err := s.repo.GetByEmailAndDeletedAtIsNull(ctx, req.Email)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
