@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"chuongpl/quan-ly-chi-tieu/internal/feature/user"
+	"chuongpl/quan-ly-chi-tieu/internal/features/user"
+	usermocks "chuongpl/quan-ly-chi-tieu/internal/features/user/mocks"
 	"chuongpl/quan-ly-chi-tieu/internal/pkg"
-	usermocks "chuongpl/quan-ly-chi-tieu/internal/feature/user/mocks"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"

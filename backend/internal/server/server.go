@@ -2,7 +2,7 @@ package server
 
 import (
 	"chuongpl/quan-ly-chi-tieu/internal/config"
-	"chuongpl/quan-ly-chi-tieu/internal/feature/user"
+	"chuongpl/quan-ly-chi-tieu/internal/features/user"
 	"context"
 	"log/slog"
 	"time"
