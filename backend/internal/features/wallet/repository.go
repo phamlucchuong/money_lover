@@ -8,9 +8,9 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, wallet *Wallet) error
-	GetByID(ctx context.Context, walletID uuid.UUID) (*Wallet, error)
-	GetByNameAndUserID(ctx context.Context, name string, userID uuid.UUID) (*Wallet, error)
+	GetByUserAndID(ctx context.Context, userID, walletID uuid.UUID) (*Wallet, error)
+	GetByUserAndName(ctx context.Context, userID uuid.UUID, name string) (*Wallet, error)
 	GetAllByUserID(ctx context.Context, userID uuid.UUID, offset, limit int) ([]*Wallet, int64, error)
 	Update(ctx context.Context, wallet *Wallet) error
-	Delete(ctx context.Context, walletID uuid.UUID) error
+	DeleteByUserID(ctx context.Context, userID, walletID uuid.UUID) error
 }

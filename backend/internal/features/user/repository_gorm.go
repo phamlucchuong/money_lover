@@ -77,7 +77,7 @@ func (r *repository) Update(ctx context.Context, user *User) error {
 }
 
 func (r *repository) Delete(ctx context.Context, userID uuid.UUID) error {
-	result := r.db.WithContext(ctx).Delete(&User{}, userID)
+	result := r.db.WithContext(ctx).Where("deleted_at IS NULL").Delete(&User{}, userID)
 	if result.Error != nil {
 		return result.Error
 	}
