@@ -61,7 +61,6 @@ func TestService_Create(t *testing.T) {
 						u.ID = mockUserID
 						return nil
 					})
-
 			},
 			expectedResp: &user.UserResponse{
 				ID:    mockUserID,

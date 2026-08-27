@@ -44,13 +44,35 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
       - "8080:8080"
-    volumes:
-      - keycloak_data:/opt/keycloak/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: quan-ly-chi-tieu-api:latest
+    container_name: backend
+    # Override POSTGRES_HOST so the backend reaches Postgres via the compose
+    # network DNS name "postgresql" rather than localhost (localhost inside
+    # the container points to the container itself, not the host or siblings).
+    environment:
+      POSTGRES_HOST: postgresql
+      ENVIRONMENT: development
+    env_file:
+      - backend/.env
+    ports:
+      - "${PORT:-8080}:8080"
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - backend-net
 
 volumes:
   postgresql_data:
   redis_data:
-  keycloak_data:
 
 networks:
   backend-net:
