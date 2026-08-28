@@ -140,7 +140,7 @@ func (s *service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, e
 
 	return &AuthResponse{
 		Authenticated: true,
-		Token:         token,
+		AccessToken:   token,
 		RefreshToken:  refreshToken,
 	}, nil
 }

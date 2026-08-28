@@ -23,7 +23,21 @@ func (s *Server) SetupRoutes() {
 }
 
 func (s *Server) healthCheck(c *echo.Context) error {
-	// ctx := c.Request().Context()
+	ctx := c.Request().Context()
+
+	sqlDB, err := s.gormDB.DB()
+	if err != nil {
+		return c.JSON(http.StatusServiceUnavailable, map[string]string{
+			"status":   "unhealthy",
+			"database": err.Error(),
+		})
+	}
+	if err := sqlDB.PingContext(ctx); err != nil {
+		return c.JSON(http.StatusServiceUnavailable, map[string]string{
+			"status":   "unhealthy",
+			"database": err.Error(),
+		})
+	}
 
 	return c.JSON(http.StatusOK, map[string]string{"status": "healthy"})
 }

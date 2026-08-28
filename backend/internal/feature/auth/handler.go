@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"chuongpl/quan-ly-chi-tieu/internal/config"
 	"chuongpl/quan-ly-chi-tieu/internal/feature/user"
@@ -71,5 +72,46 @@ func (h *Handler) Login(c *echo.Context) error {
 		}
 	}
 
+	setAuthCookies(c, resp.AccessToken, resp.RefreshToken, h.cfg)
+	if h.cfg.Environment == "production" {
+		c.Response().Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+	}
+
 	return pkg.JSONOK(c, resp)
+}
+
+func setAuthCookies(c *echo.Context, accessToken, refreshToken string, cfg *config.Config) {
+	accessCookie := &http.Cookie{
+		Name:     "access_token",
+		Value:    accessToken,
+		Path:     "/",
+		Expires:  time.Now().Add(time.Duration(cfg.AccessTokenExpiration) * time.Minute),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	}
+	c.SetCookie(accessCookie)
+
+	refreshCookie := &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Path:     "/",
+		Expires:  time.Now().Add(time.Duration(cfg.RefreshTokenExpiration) * time.Minute),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	}
+	c.SetCookie(refreshCookie)
+}
+
+func ClearAuthCookies(c *echo.Context) {
+	cookie := &http.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+		HttpOnly: true,
+	}
+	c.SetCookie(cookie)
 }
