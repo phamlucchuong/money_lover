@@ -12,6 +12,18 @@ type RegisterRequest struct {
 }
 
 type AuthResponse struct {
-	Token        string `json:"token"`
-	RefreshToken string `json:"refresh_token"`
+	Authenticated bool   `json:"authenticated"`
+	Token         string `json:"token"`
+	RefreshToken  string `json:"refresh_token"`
+}
+
+type RefreshTokenRequest struct {
+	Token        string `json:"token" validate:"required"`
+	RefreshToken string `json:"refresh_token" validate:"required"`
+}
+
+type UserContext struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }

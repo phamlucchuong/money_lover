@@ -35,22 +35,9 @@ services:
     networks:
       - backend-net
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:latest
-    command: start-dev
-    environment:
-      KC_DB: dev-file
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-    ports:
-      - "8080:8080"
-    volumes:
-      - keycloak_data:/opt/keycloak/data
-
 volumes:
   postgresql_data:
   redis_data:
-  keycloak_data:
 
 networks:
   backend-net:

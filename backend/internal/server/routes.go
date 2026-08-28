@@ -12,7 +12,8 @@ func (s *Server) SetupRoutes() {
 	v1 := s.echo.Group("/api/v1")
 
 	authGroup := v1.Group("/auth")
-	authGroup.POST("/register", s.userHandler.CreateUser)
+	authGroup.POST("/register", s.authHandler.Register)
+	authGroup.POST("/login", s.authHandler.Login)
 
 	userGroup := v1.Group("/users")
 	userGroup.GET("", s.userHandler.GetAllUsers)
@@ -25,5 +26,4 @@ func (s *Server) healthCheck(c *echo.Context) error {
 	// ctx := c.Request().Context()
 
 	return c.JSON(http.StatusOK, map[string]string{"status": "healthy"})
-
 }

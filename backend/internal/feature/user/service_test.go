@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"chuongpl/quan-ly-chi-tieu/internal/feature/auth"
 	"chuongpl/quan-ly-chi-tieu/internal/feature/user"
 	usermocks "chuongpl/quan-ly-chi-tieu/internal/feature/user/mocks"
 	"chuongpl/quan-ly-chi-tieu/internal/pkg"
@@ -31,7 +30,7 @@ func TestService_Create(t *testing.T) {
 	// 1. Tạo sẵn mock ID cố định
 	mockUserID := uuid.MustParse("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
 
-	validReq := auth.RegisterRequest{
+	validReq := user.User{
 		Email:    "test@example.com",
 		Name:     "Test User",
 		Password: "password123",
@@ -39,14 +38,14 @@ func TestService_Create(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		req           auth.RegisterRequest
+		req           *user.User
 		mockSetup     func(repo *usermocks.MockRepository)
 		expectedResp  *user.UserResponse
 		expectedError error
 	}{
 		{
 			name: "success",
-			req:  validReq,
+			req:  &validReq,
 			mockSetup: func(repo *usermocks.MockRepository) {
 				repo.EXPECT().GetByEmailAndDeletedAtIsNull(mock.Anything, validReq.Email).
 					Return(nil, gorm.ErrRecordNotFound)
@@ -71,7 +70,7 @@ func TestService_Create(t *testing.T) {
 		},
 		{
 			name: "unique violation race condition",
-			req:  validReq,
+			req:  &validReq,
 			mockSetup: func(repo *usermocks.MockRepository) {
 				repo.EXPECT().GetByEmailAndDeletedAtIsNull(mock.Anything, validReq.Email).
 					Return(nil, gorm.ErrRecordNotFound)
