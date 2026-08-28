@@ -10,6 +10,7 @@ import (
 
 	"chuongpl/quan-ly-chi-tieu/internal/config"
 	"chuongpl/quan-ly-chi-tieu/internal/feature/user"
+	"chuongpl/quan-ly-chi-tieu/internal/platform/cache"
 	"chuongpl/quan-ly-chi-tieu/internal/platform/db"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -32,18 +33,20 @@ type CustomClaims struct {
 type Service interface {
 	Register(ctx context.Context, req RegisterRequest) (*user.UserResponse, error)
 	Login(ctx context.Context, req LoginRequest) (*AuthResponse, error)
-	// GeneratedToken(userID uuid.UUID, tokenType TokenType) (string, error)
+	Logout(ctx context.Context, tokenString string) error
 }
 
 type service struct {
 	userSrevice user.Service
+	redisCache  cache.Cache
 	cfg         *config.Config
 	log         *slog.Logger
 }
 
-func NewService(userService user.Service, cfg *config.Config, log *slog.Logger) Service {
+func NewService(userService user.Service, redisCache cache.Cache, cfg *config.Config, log *slog.Logger) Service {
 	return &service{
 		userSrevice: userService,
+		redisCache:  redisCache,
 		cfg:         cfg,
 		log:         log,
 	}
@@ -143,4 +146,29 @@ func (s *service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, e
 		AccessToken:   token,
 		RefreshToken:  refreshToken,
 	}, nil
+}
+
+func (s *service) Logout(ctx context.Context, tokenString string) error {
+	claim := &CustomClaims{}
+	_, err := jwt.ParseWithClaims(tokenString, claim, func(t *jwt.Token) (interface{}, error) {
+		return []byte(s.cfg.JWTAccessSecret), nil
+	})
+	if err != nil {
+		return err
+	}
+
+	expTime := claim.ExpiresAt.Time
+	now := time.Now()
+
+	if expTime.Before(now) {
+		return nil
+	}
+	remainingTTL := expTime.Sub(now)
+
+	blacklistKey := "blacklist:" + claim.ID
+	if err := s.redisCache.Set(ctx, blacklistKey, "true", remainingTTL); err != nil {
+		return err
+	}
+
+	return nil
 }
