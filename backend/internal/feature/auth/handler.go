@@ -80,6 +80,23 @@ func (h *Handler) Login(c *echo.Context) error {
 	return pkg.JSONOK(c, resp)
 }
 
+func (h *Handler) Logout(c *echo.Context) error {
+	tokenString := c.Request().Header.Get("Authorization")
+	if tokenString == "" {
+		return pkg.JSONError(c, http.StatusUnauthorized, pkg.CodeUnauthorized, "missing authorization header")
+	}
+
+	err := h.svc.Logout(c.Request().Context(), tokenString)
+	if err != nil {
+		h.log.Error("logout failed", slog.String("error", err.Error()))
+		return pkg.JSONError(c, http.StatusInternalServerError, pkg.CodeInternalServerError, "internal server error")
+	}
+
+	ClearAuthCookies(c)
+
+	return pkg.JSONOK(c, map[string]string{"message": "logged out successfully"})
+}
+
 func setAuthCookies(c *echo.Context, accessToken, refreshToken string, cfg *config.Config) {
 	accessCookie := &http.Cookie{
 		Name:     "access_token",
