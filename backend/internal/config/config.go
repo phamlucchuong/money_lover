@@ -14,6 +14,8 @@ type Config struct {
 	PostgresPassword       string   `mapstructure:"POSTGRES_PASSWORD"`
 	PostgresName           string   `mapstructure:"POSTGRES_DB"`
 	PostgresPort           string   `mapstructure:"POSTGRESQL_PORT"`
+	RedisHost              string   `mapstructure:"REDIS_HOST"`
+	RedisPort              string   `mapstructure:"REDIS_PORT"`
 	AllowedOrigins         []string `mapstructure:"ALLOWED_ORIGINS"`
 	JWTAccessSecret        string   `mapstructure:"JWT_ACCESS_SECRET"`
 	JWTRefreshSecret       string   `mapstructure:"JWT_REFRESH_SECRET"`
@@ -33,6 +35,8 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("POSTGRES_PASSWORD", "password")
 	viper.SetDefault("POSTGRES_DB", "dbname")
 	viper.SetDefault("POSTGRESQL_PORT", "5432")
+	viper.SetDefault("REDIS_HOST", "localhost")
+	viper.SetDefault("REDIS_PORT", "6379")
 	viper.SetDefault("ALLOWED_ORIGINS", "http://localhost:3000")
 	viper.SetDefault("JWT_ACCESS_SECRET", "your_jwt_access_secret")
 	viper.SetDefault("JWT_REFRESH_SECRET", "your_jwt_refresh_secret")
