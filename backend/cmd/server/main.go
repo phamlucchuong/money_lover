@@ -1,15 +1,17 @@
 package main
 
 import (
-	"chuongpl/quan-ly-chi-tieu/internal/config"
-	"chuongpl/quan-ly-chi-tieu/internal/logger"
-	"chuongpl/quan-ly-chi-tieu/internal/platform/db"
-	"chuongpl/quan-ly-chi-tieu/internal/server"
 	"context"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"chuongpl/quan-ly-chi-tieu/internal/config"
+	"chuongpl/quan-ly-chi-tieu/internal/logger"
+	"chuongpl/quan-ly-chi-tieu/internal/platform/cache"
+	"chuongpl/quan-ly-chi-tieu/internal/platform/db"
+	"chuongpl/quan-ly-chi-tieu/internal/server"
 )
 
 func main() {
@@ -31,7 +33,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	srv := server.NewServer(cfg, log, gormDB)
+	rdb, err := cache.NewRedisClient(ctx, cfg.RedisHost, cfg.RedisPort)
+	if err != nil {
+		slog.Error("fail to create redis client", slog.Any("error", err))
+		os.Exit(1)
+	}
+
+	srv := server.NewServer(cfg, log, gormDB, rdb)
 
 	log.Info("shutting down server", slog.String("port", cfg.Port))
 	if err := srv.Start(ctx); err != nil {

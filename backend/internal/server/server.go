@@ -8,8 +8,10 @@ import (
 	"chuongpl/quan-ly-chi-tieu/internal/config"
 	"chuongpl/quan-ly-chi-tieu/internal/feature/auth"
 	"chuongpl/quan-ly-chi-tieu/internal/feature/user"
+	"chuongpl/quan-ly-chi-tieu/internal/platform/cache"
 
 	"github.com/labstack/echo/v5"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -18,26 +20,30 @@ type Server struct {
 	cfg         *config.Config
 	log         *slog.Logger
 	gormDB      *gorm.DB
+	rdb         *redis.Client
 	userHandler *user.Handler
 	userService user.Service
 	authHandler *auth.Handler
 	authService auth.Service
 }
 
-func NewServer(cfg *config.Config, log *slog.Logger, gormDB *gorm.DB) *Server {
+func NewServer(cfg *config.Config, log *slog.Logger, gormDB *gorm.DB, rdb *redis.Client) *Server {
 	e := echo.New()
 	s := &Server{
 		echo:   e,
 		cfg:    cfg,
 		log:    log,
 		gormDB: gormDB,
+		rdb:    rdb,
 	}
+
+	redisCache := cache.NewRedisCache(rdb)
 
 	userRepo := user.NewRepository(gormDB)
 	s.userService = user.NewService(userRepo, cfg, log)
 	s.userHandler = user.NewHandler(s.userService, cfg, log)
 
-	s.authService = auth.NewService(s.userService, cfg, log)
+	s.authService = auth.NewService(s.userService, redisCache, cfg, log)
 	s.authHandler = auth.NewHandler(s.authService, cfg, log)
 
 	s.echo.Validator = NewValidator()
