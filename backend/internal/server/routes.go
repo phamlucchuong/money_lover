@@ -3,6 +3,8 @@ package server
 import (
 	"net/http"
 
+	"chuongpl/quan-ly-chi-tieu/internal/feature/auth"
+
 	"github.com/labstack/echo/v5"
 )
 
@@ -14,8 +16,9 @@ func (s *Server) SetupRoutes() {
 	authGroup := v1.Group("/auth")
 	authGroup.POST("/register", s.authHandler.Register)
 	authGroup.POST("/login", s.authHandler.Login)
+	authGroup.POST("/logout", s.authHandler.Logout, auth.JWTAuth(s.cfg, s.log, s.blacklistChecker))
 
-	userGroup := v1.Group("/users")
+	userGroup := v1.Group("/users", auth.JWTAuth(s.cfg, s.log, s.blacklistChecker))
 	userGroup.GET("", s.userHandler.GetAllUsers)
 	userGroup.GET("/:id", s.userHandler.GetUserByID)
 	userGroup.PUT("/:id", s.userHandler.UpdateUser)

@@ -16,15 +16,16 @@ import (
 )
 
 type Server struct {
-	echo        *echo.Echo
-	cfg         *config.Config
-	log         *slog.Logger
-	gormDB      *gorm.DB
-	rdb         *redis.Client
-	userHandler *user.Handler
-	userService user.Service
-	authHandler *auth.Handler
-	authService auth.Service
+	echo             *echo.Echo
+	cfg              *config.Config
+	log              *slog.Logger
+	gormDB           *gorm.DB
+	rdb              *redis.Client
+	blacklistChecker auth.BlacklistChecker
+	userHandler      *user.Handler
+	userService      user.Service
+	authHandler      *auth.Handler
+	authService      auth.Service
 }
 
 func NewServer(cfg *config.Config, log *slog.Logger, gormDB *gorm.DB, rdb *redis.Client) *Server {
@@ -38,6 +39,7 @@ func NewServer(cfg *config.Config, log *slog.Logger, gormDB *gorm.DB, rdb *redis
 	}
 
 	redisCache := cache.NewRedisCache(rdb)
+	s.blacklistChecker = auth.NewBlacklistChecker(redisCache)
 
 	userRepo := user.NewRepository(gormDB)
 	s.userService = user.NewService(userRepo, cfg, log)
@@ -47,6 +49,7 @@ func NewServer(cfg *config.Config, log *slog.Logger, gormDB *gorm.DB, rdb *redis
 	s.authHandler = auth.NewHandler(s.authService, cfg, log)
 
 	s.echo.Validator = NewValidator()
+	s.setupMiddleware()
 	s.SetupRoutes()
 
 	return s

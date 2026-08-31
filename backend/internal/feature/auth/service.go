@@ -33,7 +33,7 @@ type CustomClaims struct {
 type Service interface {
 	Register(ctx context.Context, req RegisterRequest) (*user.UserResponse, error)
 	Login(ctx context.Context, req LoginRequest) (*AuthResponse, error)
-	Logout(ctx context.Context, tokenString string) error
+	Logout(ctx context.Context, jti string, ttl time.Duration) error
 }
 
 type service struct {
@@ -148,25 +148,9 @@ func (s *service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, e
 	}, nil
 }
 
-func (s *service) Logout(ctx context.Context, tokenString string) error {
-	claim := &CustomClaims{}
-	_, err := jwt.ParseWithClaims(tokenString, claim, func(t *jwt.Token) (interface{}, error) {
-		return []byte(s.cfg.JWTAccessSecret), nil
-	})
-	if err != nil {
-		return err
-	}
-
-	expTime := claim.ExpiresAt.Time
-	now := time.Now()
-
-	if expTime.Before(now) {
-		return nil
-	}
-	remainingTTL := expTime.Sub(now)
-
-	blacklistKey := "blacklist:" + claim.ID
-	if err := s.redisCache.Set(ctx, blacklistKey, "true", remainingTTL); err != nil {
+func (s *service) Logout(ctx context.Context, jti string, ttl time.Duration) error {
+	blacklistKey := "blacklist:" + jti
+	if err := s.redisCache.Set(ctx, blacklistKey, "true", ttl); err != nil {
 		return err
 	}
 

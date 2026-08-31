@@ -1,11 +1,14 @@
-package server
+package auth
 
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
+
+	"chuongpl/quan-ly-chi-tieu/internal/config"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v5"
@@ -34,7 +37,7 @@ func extractToken(c *echo.Context) string {
 }
 
 // JWTAuth returns an Echo middleware that validates Bearer JWTs and checks the blacklist.
-func (s *Server) JWTAuth(checker BlacklistChecker) echo.MiddlewareFunc {
+func JWTAuth(cfg *config.Config, log *slog.Logger, checker BlacklistChecker) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
 			raw := extractToken(c)
@@ -46,7 +49,7 @@ func (s *Server) JWTAuth(checker BlacklistChecker) echo.MiddlewareFunc {
 				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 					return nil, echo.NewHTTPError(http.StatusUnauthorized, "unexpected signing method")
 				}
-				return []byte(s.cfg.JWTAccessSecret), nil
+				return []byte(cfg.JWTAccessSecret), nil
 			}, jwt.WithValidMethods([]string{"HS256"}))
 			if err != nil || !token.Valid {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid or expired token")
@@ -67,7 +70,7 @@ func (s *Server) JWTAuth(checker BlacklistChecker) echo.MiddlewareFunc {
 			// Check blacklist.
 			blacklisted, err := checker(c.Request().Context(), jti)
 			if err != nil {
-				s.log.Error("blacklist check failed", "jti", jti, "err", err)
+				log.Error("blacklist check failed", "jti", jti, "err", err)
 				return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 			}
 			if blacklisted {
@@ -92,7 +95,7 @@ func (s *Server) JWTAuth(checker BlacklistChecker) echo.MiddlewareFunc {
 // OptionalJWTAuth returns an Echo middleware that extracts user info from a
 // Bearer JWT if present, but allows unauthenticated requests to proceed.
 // Sets CtxKeyUserID in context only if a valid token is found.
-func (s *Server) OptionalJWTAuth(checker BlacklistChecker) echo.MiddlewareFunc {
+func OptionalJWTAuth(cfg *config.Config, checker BlacklistChecker) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
 			raw := extractToken(c)
@@ -104,7 +107,7 @@ func (s *Server) OptionalJWTAuth(checker BlacklistChecker) echo.MiddlewareFunc {
 				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 					return nil, fmt.Errorf("unexpected signing method")
 				}
-				return []byte(s.cfg.JWTAccessSecret), nil
+				return []byte(cfg.JWTAccessSecret), nil
 			}, jwt.WithValidMethods([]string{"HS256"}))
 			if err != nil || !token.Valid {
 				// Invalid token — proceed as anonymous
