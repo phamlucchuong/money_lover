@@ -10,6 +10,7 @@ import (
 	"chuongpl/quan-ly-chi-tieu/internal/feature/user"
 	"chuongpl/quan-ly-chi-tieu/internal/pkg"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v5"
 )
 
@@ -62,21 +63,53 @@ func (h *Handler) Login(c *echo.Context) error {
 
 	resp, err := h.svc.Login(c.Request().Context(), req)
 	if err != nil {
-		switch {
-		case errors.Is(err, user.ErrUserAlreadyExists):
-			return pkg.JSONError(c, http.StatusConflict, pkg.CodeConflict, "user already exists")
-		default:
-			h.log.Error("login failed", slog.String("error", err.Error()))
-			return pkg.JSONError(c, http.StatusInternalServerError, pkg.CodeInternalServerError, "internal server error")
-
-		}
+		// Login errors are credential-related; never leak whether the email
+		// exists. Treat all failures from the service as invalid credentials
+		// unless we know they indicate an internal fault (logged separately).
+		h.log.Error("login failed", slog.String("error", err.Error()))
+		return pkg.JSONError(c, http.StatusUnauthorized, pkg.CodeUnauthorized, "invalid email or password")
 	}
 
-	setAuthCookies(c, resp.AccessToken, resp.RefreshToken, h.cfg)
+	setAuthCookies(c, h.cfg, resp.AccessToken, resp.RefreshToken)
 	if h.cfg.Environment == "production" {
 		c.Response().Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
 	}
 
+	return pkg.JSONOK(c, resp)
+}
+
+func (h *Handler) RefreshToken(c *echo.Context) error {
+	refreshToken, err := c.Cookie("refresh_token")
+	if err != nil {
+		if errors.Is(err, http.ErrNoCookie) {
+			return pkg.JSONError(c, http.StatusUnauthorized, pkg.CodeUnauthorized, "missing refresh token")
+		}
+		return pkg.JSONError(c, http.StatusBadRequest, pkg.CodeBadRequest, "invalid request data")
+	}
+
+	rawrefreshToken := refreshToken.Value
+	if rawrefreshToken == "" {
+		return pkg.JSONError(c, http.StatusUnauthorized, pkg.CodeUnauthorized, "missing refresh token")
+	}
+
+	resp, err := h.svc.RefreshToken(c.Request().Context(), rawrefreshToken)
+	if err != nil {
+		switch {
+		case errors.Is(err, jwt.ErrTokenExpired),
+			errors.Is(err, jwt.ErrTokenSignatureInvalid),
+			errors.Is(err, jwt.ErrTokenMalformed),
+			errors.Is(err, jwt.ErrTokenNotValidYet):
+			return pkg.JSONError(c, http.StatusUnauthorized, pkg.CodeUnauthorized, "invalid or expired refresh token")
+		default:
+			// Includes "invalid refresh token" (wrong type / bad claims) and
+			// Redis failures. Log full error server-side; return a generic
+			// 401 to avoid leaking why the token was rejected.
+			h.log.Error("refresh token failed", slog.String("error", err.Error()))
+			return pkg.JSONError(c, http.StatusUnauthorized, pkg.CodeUnauthorized, "invalid refresh token")
+		}
+	}
+
+	setAuthCookies(c, h.cfg, resp.AccessToken, resp.RefreshToken)
 	return pkg.JSONOK(c, resp)
 }
 
@@ -99,7 +132,7 @@ func (h *Handler) Logout(c *echo.Context) error {
 	return pkg.JSONOK(c, map[string]string{"message": "logged out successfully"})
 }
 
-func setAuthCookies(c *echo.Context, accessToken, refreshToken string, cfg *config.Config) {
+func setAuthCookies(c *echo.Context, cfg *config.Config, accessToken, refreshToken string) {
 	accessCookie := &http.Cookie{
 		Name:     "access_token",
 		Value:    accessToken,

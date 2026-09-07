@@ -33,6 +33,7 @@ type CustomClaims struct {
 type Service interface {
 	Register(ctx context.Context, req RegisterRequest) (*user.UserResponse, error)
 	Login(ctx context.Context, req LoginRequest) (*AuthResponse, error)
+	RefreshToken(ctx context.Context, refreshToken string) (*AuthResponse, error)
 	Logout(ctx context.Context, jti string, ttl time.Duration) error
 }
 
@@ -145,6 +146,67 @@ func (s *service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, e
 		Authenticated: true,
 		AccessToken:   token,
 		RefreshToken:  refreshToken,
+	}, nil
+}
+
+func (s *service) RefreshToken(ctx context.Context, refreshToken string) (*AuthResponse, error) {
+	token, err := jwt.ParseWithClaims(refreshToken, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(s.cfg.JWTRefreshSecret), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(*CustomClaims)
+	if !ok || !token.Valid || claims.Type != string(RefreshToken) {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	// Reuse detection: a refresh token that already shows up in the
+	// blacklist has been rotated before. Either the client retried or
+	// the chain was stolen — reject either way.
+	blacklisted, err := s.redisCache.Exists(ctx, blacklistKey(claims.ID))
+	if err != nil {
+		return nil, err
+	}
+	if blacklisted {
+		return nil, errors.New("refresh token has been revoked")
+	}
+
+	// Rotate: blacklist the old refresh jti with its remaining TTL so it
+	// cannot be reused. Done before issuing new tokens so a failure here
+	// blocks replay attempts at the cost of denying a valid refresh.
+	if claims.ExpiresAt != nil {
+		remaining := time.Until(claims.ExpiresAt.Time)
+		if remaining > 0 {
+			if err := s.redisCache.Set(ctx, blacklistKey(claims.ID), "true", remaining); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	userID, err := uuid.Parse(claims.Subject)
+	if err != nil {
+		return nil, err
+	}
+
+	newAccessToken, err := generatedToken(s.cfg, userID, AccessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	newRefreshToken, err := generatedToken(s.cfg, userID, RefreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuthResponse{
+		Authenticated: true,
+		AccessToken:   newAccessToken,
+		RefreshToken:  newRefreshToken,
 	}, nil
 }
 

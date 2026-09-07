@@ -16,6 +16,7 @@ func (s *Server) SetupRoutes() {
 	authGroup := v1.Group("/auth")
 	authGroup.POST("/register", s.authHandler.Register)
 	authGroup.POST("/login", s.authHandler.Login)
+	authGroup.POST("/refresh", s.authHandler.RefreshToken)
 	authGroup.POST("/logout", s.authHandler.Logout, auth.JWTAuth(s.cfg, s.log, s.blacklistChecker))
 
 	userGroup := v1.Group("/users", auth.JWTAuth(s.cfg, s.log, s.blacklistChecker))
