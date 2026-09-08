@@ -24,7 +24,24 @@ gen-feature:
 	done
 	@echo "Created package $(NAME) files successfully."
 
+dc-up:
+	docker compose -f docker-compose.yaml up -d
 
+dc-down:
+	docker compose -f docker-compose.yaml down
+
+dc-restart:
+	docker compose -f docker-compose.yaml down
+	docker compose -f docker-compose.yaml up -d
+
+dc-logs:
+	docker compose -f docker-compose.yaml logs -f
+
+dc-ps:
+	docker compose -f docker-compose.yaml ps
+
+dc-build:
+	docker-compose -f docker-compose.yaml build
 
 run-be:
 	cd backend && go run ./cmd/server/main.go

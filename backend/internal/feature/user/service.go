@@ -1,13 +1,14 @@
 package user
 
 import (
-	"chuongpl/quan-ly-chi-tieu/internal/config"
-	"chuongpl/quan-ly-chi-tieu/internal/pkg"
-	"chuongpl/quan-ly-chi-tieu/internal/platform/db"
 	"context"
 	"errors"
 	"log/slog"
 	"math"
+
+	"chuongpl/quan-ly-chi-tieu/internal/config"
+	"chuongpl/quan-ly-chi-tieu/internal/pkg"
+	"chuongpl/quan-ly-chi-tieu/internal/platform/db"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -20,7 +21,8 @@ var (
 )
 
 type Service interface {
-	Create(ctx context.Context, req CreateUserRequest) (*UserResponse, error)
+	GetByEmailAndDeletedAtIsNull(ctx context.Context, email string) (*User, error)
+	Create(ctx context.Context, user *User) (*UserResponse, error)
 	GetByID(ctx context.Context, userID uuid.UUID) (*UserResponse, error)
 	GetAllUsers(ctx context.Context, page, pageSize int) ([]*UserResponse, *pkg.PaginationMeta, error)
 	Update(ctx context.Context, userID uuid.UUID, req UpdateUserRequest) (*UserResponse, error)
@@ -41,28 +43,12 @@ func NewService(repo Repository, cfg *config.Config, log *slog.Logger) Service {
 	}
 }
 
-func (s *service) Create(ctx context.Context, req CreateUserRequest) (*UserResponse, error) {
-	existing, err := s.repo.GetByEmailAndDeletedAtIsNull(ctx, req.Email)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
+func (s *service) GetByEmailAndDeletedAtIsNull(ctx context.Context, email string) (*User, error) {
+	return s.repo.GetByEmailAndDeletedAtIsNull(ctx, email)
+}
 
-	if existing != nil {
-		return nil, ErrUserAlreadyExists
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-
-	user := &User{
-		Email:    req.Email,
-		Name:     req.Name,
-		Password: string(hashedPassword),
-	}
-
-	if err = s.repo.Create(ctx, user); err != nil {
+func (s *service) Create(ctx context.Context, user *User) (*UserResponse, error) {
+	if err := s.repo.Create(ctx, user); err != nil {
 		if db.IsUniqueViolation(err) {
 			return nil, ErrUserAlreadyExists
 		}

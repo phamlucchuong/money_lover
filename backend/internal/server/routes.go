@@ -3,6 +3,8 @@ package server
 import (
 	"net/http"
 
+	"chuongpl/quan-ly-chi-tieu/internal/feature/auth"
+
 	"github.com/labstack/echo/v5"
 )
 
@@ -12,9 +14,12 @@ func (s *Server) SetupRoutes() {
 	v1 := s.echo.Group("/api/v1")
 
 	authGroup := v1.Group("/auth")
-	authGroup.POST("/register", s.userHandler.CreateUser)
+	authGroup.POST("/register", s.authHandler.Register)
+	authGroup.POST("/login", s.authHandler.Login)
+	authGroup.POST("/refresh", s.authHandler.RefreshToken)
+	authGroup.POST("/logout", s.authHandler.Logout, auth.JWTAuth(s.cfg, s.log, s.blacklistChecker))
 
-	userGroup := v1.Group("/users")
+	userGroup := v1.Group("/users", auth.JWTAuth(s.cfg, s.log, s.blacklistChecker))
 	userGroup.GET("", s.userHandler.GetAllUsers)
 	userGroup.GET("/:id", s.userHandler.GetUserByID)
 	userGroup.PUT("/:id", s.userHandler.UpdateUser)
@@ -22,8 +27,21 @@ func (s *Server) SetupRoutes() {
 }
 
 func (s *Server) healthCheck(c *echo.Context) error {
-	// ctx := c.Request().Context()
+	ctx := c.Request().Context()
+
+	sqlDB, err := s.gormDB.DB()
+	if err != nil {
+		return c.JSON(http.StatusServiceUnavailable, map[string]string{
+			"status":   "unhealthy",
+			"database": err.Error(),
+		})
+	}
+	if err := sqlDB.PingContext(ctx); err != nil {
+		return c.JSON(http.StatusServiceUnavailable, map[string]string{
+			"status":   "unhealthy",
+			"database": err.Error(),
+		})
+	}
 
 	return c.JSON(http.StatusOK, map[string]string{"status": "healthy"})
-
 }

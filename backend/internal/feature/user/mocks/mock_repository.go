@@ -3,7 +3,7 @@
 package usermocks
 
 import (
-	user "chuongpl/quan-ly-chi-tieu/internal/features/user"
+	user "chuongpl/quan-ly-chi-tieu/internal/feature/user"
 	context "context"
 
 	mock "github.com/stretchr/testify/mock"
