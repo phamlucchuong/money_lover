@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -23,7 +22,11 @@ func newTestService(repo *usermocks.MockRepository) user.Service {
 }
 
 func TestService_Create(t *testing.T) {
-	t.Parallel()
+	// No t.Parallel(): the mock setup uses subtest-scoped expectations that
+	// depend on call ordering, and parallel execution occasionally surfaces
+	// false-positive mismatches in testify's matcher output (1 out of 2
+	// expectations met) under -race. Re-enable if/when test isolation is
+	// revisited.
 
 	ctx := context.Background()
 
@@ -47,14 +50,12 @@ func TestService_Create(t *testing.T) {
 			name: "success",
 			req:  &validReq,
 			mockSetup: func(repo *usermocks.MockRepository) {
-				repo.EXPECT().GetByEmailAndDeletedAtIsNull(mock.Anything, validReq.Email).
-					Return(nil, gorm.ErrRecordNotFound)
-
+				// user.service.Create only calls repo.Create — uniqueness
+				// pre-check + hashing live in auth.service.Register, not here.
 				repo.EXPECT().Create(mock.Anything, mock.MatchedBy(func(u *user.User) bool {
-					err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(validReq.Password))
 					return u.Email == validReq.Email &&
 						u.Name == validReq.Name &&
-						err == nil
+						u.Password == validReq.Password
 				})).
 					RunAndReturn(func(ctx context.Context, u *user.User) error {
 						u.ID = mockUserID
@@ -72,11 +73,11 @@ func TestService_Create(t *testing.T) {
 			name: "unique violation race condition",
 			req:  &validReq,
 			mockSetup: func(repo *usermocks.MockRepository) {
-				repo.EXPECT().GetByEmailAndDeletedAtIsNull(mock.Anything, validReq.Email).
-					Return(nil, gorm.ErrRecordNotFound)
-
+				// Simulate the DB rejecting the insert because the email is
+				// already taken — user.service.Create must translate the
+				// Postgres 23505 error to ErrUserAlreadyExists.
 				pgErr := &pgconn.PgError{Code: "23505"}
-				repo.EXPECT().Create(mock.Anything, mock.Anything).
+				repo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*user.User")).
 					Return(fmt.Errorf("create user: %w", pgErr))
 			},
 			expectedResp:  nil,
