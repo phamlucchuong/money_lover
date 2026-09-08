@@ -13,6 +13,8 @@ var (
 	CodeNotFound            = 404
 	CodeInternalServerError = 500
 	CodeValidationError     = 422
+	CodeUnauthorized        = 401
+	CodeForbidden           = 403
 )
 
 type APIError struct {

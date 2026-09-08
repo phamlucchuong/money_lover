@@ -9,3 +9,9 @@ packages:
   chuongpl/quan-ly-chi-tieu/internal/feature/user:
     interfaces:
       Repository:
+      Service:
+
+  # Module 2: Auth
+  chuongpl/quan-ly-chi-tieu/internal/feature/auth:
+    interfaces:
+      Service:
