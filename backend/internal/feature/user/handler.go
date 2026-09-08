@@ -68,7 +68,7 @@ func (h *Handler) GetAllUsers(c *echo.Context) error {
 }
 
 func (h *Handler) UpdateUser(c *echo.Context) error {
-	userID, err := uuid.Parse(c.Param("user_id"))
+	userID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return pkg.JSONError(c, http.StatusBadRequest, pkg.CodeBadRequest, "invalid user ID")
 	}
@@ -99,7 +99,7 @@ func (h *Handler) UpdateUser(c *echo.Context) error {
 }
 
 func (h *Handler) DeleteUser(c *echo.Context) error {
-	userID, err := uuid.Parse(c.Param("user_id"))
+	userID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return pkg.JSONError(c, http.StatusBadRequest, pkg.CodeBadRequest, "invalid user ID")
 	}
